@@ -1,6 +1,7 @@
 package org.example;
 
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class Account {
@@ -25,7 +26,7 @@ public class Account {
         if (amount > 0 && amount <= this.balance) {
             this.balance -= amount;
         } else {
-            throw new IllegalArgumentException("There are insufficient funds in the account");
+            throw new IllegalArgumentException("На счёте: " + balance + " нужно для перевода: " + amount);
         }
     }
 
@@ -39,5 +40,17 @@ public class Account {
 
     public double getBalance() {
         return balance;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Account account = (Account) o;
+        return Objects.equals(id, account.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }
