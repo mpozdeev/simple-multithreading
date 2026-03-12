@@ -18,7 +18,8 @@ public class TransferSimulation {
     private int countAccounts;
     private final List<Transfer> transfers;
     private final List<Account> accounts;
-    private final List<Account> accountsBefore;
+    private List<Account> accountsCopy;
+    private final Generator generator = new Generator();
 
     private final Logger logger;
 
@@ -29,7 +30,7 @@ public class TransferSimulation {
         this.logger = logger;
         this.transfers = new ArrayList<>();
         this.accounts = new ArrayList<>();
-        this.accountsBefore = new ArrayList<>();
+        this.accountsCopy = new ArrayList<>();
     }
 
     public TransferSimulation(List<Transfer> transfers, Logger logger) {
@@ -38,7 +39,7 @@ public class TransferSimulation {
         this.countTransactions = new Random().nextInt(100);
         this.countThreads = new Random().nextInt(100);
         this.accounts = new ArrayList<>();
-        this.accountsBefore = new ArrayList<>();
+        this.accountsCopy = new ArrayList<>();
     }
 
     public TransferSimulation(List<Transfer> transfers, Logger logger, int countAccounts, int countTransactions, int countThreads) {
@@ -48,19 +49,20 @@ public class TransferSimulation {
         this.transfers = transfers;
         this.logger = logger;
         this.accounts = new ArrayList<>();
-        this.accountsBefore = new ArrayList<>();
+        this.accountsCopy = new ArrayList<>();
     }
+
 
     public void executeTransferInLoop() {
         System.out.println("Count Threads: " + countThreads);
         System.out.println("Count Transactions: " + countTransactions);
-        accounts.addAll(generateAccounts(countAccounts));
-        accountsBefore.addAll(accounts);
+        accounts.addAll(generator.generateAccounts(countAccounts));
+        accountsCopy = getCopyAccounts(accounts);
 
-        System.out.println(accounts==accountsBefore);
-        double fullBalanceBefore = executeFullBalance(accounts);
+        System.out.println(accounts == accountsCopy);
+        double fullBalanceBefore = executeFullBalance(accountsCopy);
 
-        transfers.addAll(generateTransfers(generateAccounts(countAccounts), countTransactions));
+        transfers.addAll(generateTransfers(generator.generateAccounts(countAccounts), countTransactions));
 
         ExecutorService executor = newFixedThreadPool(countThreads);
 
@@ -82,7 +84,7 @@ public class TransferSimulation {
         double fullBalanceAfter = executeFullBalance(accounts);
         System.out.println("Total balance Before: " + fullBalanceBefore);
         System.out.println("Total balance After: " + fullBalanceAfter);
-        compareBalances(accountsBefore, accounts);
+        compareBalances(accountsCopy, accounts);
     }
 
     public void executeTransfers() {
@@ -110,7 +112,13 @@ public class TransferSimulation {
         }
     }
 
-
+    private List<Account> getCopyAccounts(List<Account> accountsOriginal) {
+        List<Account> accountsCopy = new ArrayList<>();
+        for (Account acc : accountsOriginal) {
+            accountsCopy.add(acc.getCopy());
+        }
+        return accountsCopy;
+    }
 
     private double executeFullBalance(List<Account> accounts) {
         double totalBalance = 0;
@@ -120,28 +128,24 @@ public class TransferSimulation {
         return totalBalance;
     }
 
-
     private List<Transfer> generateTransfers(List<Account> accounts, int countTransfers) {
         Random random = new Random();
         int accountsSize = accounts.size();
         List<Transfer> transferList = new ArrayList<>();
         for (int i = 0; i < countTransfers; i++) {
-            Account accountFrom = accounts.get(random.nextInt(accountsSize));
-            Account accountTo = accounts.get(random.nextInt(accountsSize));
+            int firstRandomAccount = 0;
+            int secondRandomAccount = 0;
+            while (firstRandomAccount == secondRandomAccount) {
+                firstRandomAccount = random.nextInt(accountsSize);
+                secondRandomAccount = random.nextInt(accountsSize);
+            }
+            Account accountFrom = accounts.get(firstRandomAccount);
+            Account accountTo = accounts.get(secondRandomAccount);
+
 //            transferList.add(new Transfer(accountFrom, accountTo, random.nextInt(1_000), Currency.random()));
             transferList.add(new Transfer(accountFrom, accountTo, random.nextInt(1_000), Currency.RUB));
         }
         return transferList;
-    }
-
-    private List<Account> generateAccounts(int count) {
-        Random random = new Random();
-        List<Account> accounts = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-//            accounts.add(new Account(UUID.randomUUID(), random.nextInt(10_000), Currency.random()));
-            accounts.add(new Account(UUID.randomUUID(), random.nextInt(10_000), Currency.RUB));
-        }
-        return accounts;
     }
 
     private void compareBalances(List<Account> accountsBefore, List<Account> accountsAfter) {
