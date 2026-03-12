@@ -30,6 +30,10 @@ public class Account {
         }
     }
 
+    public Account getCopy() {
+        return new Account(this.id, this.balance, this.currency);
+    }
+
     public UUID getId() {
         return id;
     }
